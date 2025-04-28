@@ -1,5 +1,7 @@
 mod bin_op;
 pub mod context;
+#[cfg(feature = "math")]
+mod math;
 #[cfg(any(feature = "string", feature = "array"))]
 mod method;
 mod unary;
@@ -149,21 +151,44 @@ impl Evaluator {
                         #[cfg(feature = "string")]
                         {
                             if let Some(Value::String(callee)) = args.get(0) {
-                                return Evaluator::evaluate_str_method(
+                                return match Evaluator::evaluate_str_method(
                                     callee,
                                     &callee_name,
                                     args[1..].to_vec(),
-                                );
+                                ) {
+                                    Ok(value) => Ok(value),
+                                    _ => {
+                                        #[cfg(feature = "math")]
+                                        {
+                                            if let Ok(result) = Evaluator::evaluate_math_function(
+                                                &callee_name,
+                                                args,
+                                            ) {
+                                                return Ok(result);
+                                            }
+                                        }
+                                        bail!("{:?} not found in function context", callee_name)
+                                    }
+                                };
                             }
                         }
                         #[cfg(feature = "array")]
                         {
                             if let Some(Value::Array(callee)) = args.get(0) {
-                                return Evaluator::evaluate_array_method(
+                                return match Evaluator::evaluate_array_method(
                                     callee,
                                     &callee_name,
                                     args[1..].to_vec(),
-                                );
+                                ) {
+                                    Ok(value) => Ok(value),
+                                    _ => bail!("{:?} not found in function context", callee_name),
+                                };
+                            }
+                        }
+                        #[cfg(feature = "math")]
+                        {
+                            if let Some(Value::Number(_)) = args.get(0) {
+                                return Evaluator::evaluate_math_function(&callee_name, args);
                             }
                         }
                         bail!("{:?} not found in function context", callee_name)
@@ -328,6 +353,44 @@ impl Evaluator {
         match callee_name {
             "join" => array_method.join(callee),
             _ => bail!("Unknown array method: {}", callee_name),
+        }
+    }
+    #[cfg(feature = "math")]
+    fn evaluate_math_function(callee_name: &str, mut args: Vec<Value>) -> Result<Value> {
+        let value = args.remove(0).take();
+        match args.capacity() {
+            1 => match callee_name {
+                "floor" => math::unary_function(value, f64::floor),
+                "ceil" => math::unary_function(value, f64::ceil),
+                "round" => math::unary_function(value, f64::round),
+                "sin" => math::unary_function(value, f64::sin),
+                "cos" => math::unary_function(value, f64::cos),
+                "tan" => math::unary_function(value, f64::tan),
+                "asin" => math::unary_function(value, f64::asin),
+                "acos" => math::unary_function(value, f64::acos),
+                "atan" => math::unary_function(value, f64::atan),
+                "sqrt" => math::unary_function(value, f64::sqrt),
+                "abs" => math::unary_function(value, f64::abs),
+                "clamp" => math::unary_function(value, |x| x.clamp(0.0, 1.0)),
+                "bitwiseNot" => unary_bitwise_not(value),
+                _ => bail!("{:?} not found in function context", callee_name),
+            },
+            2 => {
+                let second = args.remove(0).take();
+                match callee_name {
+                    "atan2" => math::binary_function(value, second, f64::atan2),
+                    "min" => math::binary_function(value, second, f64::min),
+                    "max" => math::binary_function(value, second, f64::max),
+                    "mod" => remainder(value, second),
+                    "pow" => math::binary_function(value, second, f64::powf),
+                    "bitwiseAnd" => bitwise_operation(value, second, |l, r| l & r),
+                    "bitwiseOr" => bitwise_operation(value, second, |l, r| l | r),
+                    "bitwiseLeft" => bitwise_operation(value, second, |l, r| l << (r & 0x1F)),
+                    "bitwiseRight" => bitwise_operation(value, second, |l, r| l >> (r & 0x1F)),
+                    _ => bail!("{:?} not found in function context", callee_name),
+                }
+            }
+            _ => bail!("{:?} not found in function context", callee_name),
         }
     }
 }
