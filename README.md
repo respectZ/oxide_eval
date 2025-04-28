@@ -2,7 +2,7 @@
 
 ## Description
 
-oxide_eval is a simple Javascript Evaluator built on top of [oxc](!https://github.com/oxc-project/oxc)
+oxide_eval is a simple Javascript Evaluator built on top of [oxc](https://github.com/oxc-project/oxc)
 
 ## Example
 
