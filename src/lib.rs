@@ -1,5 +1,7 @@
 mod bin_op;
 pub mod context;
+#[cfg(feature = "string")]
+mod method;
 mod unary;
 mod util;
 
@@ -143,12 +145,34 @@ impl Evaluator {
                 let callee_name = expr.name.to_string();
                 match self.context.get(&callee_name) {
                     Some(ContextEntry::Function(f)) => Ok(f(args)),
-                    _ => bail!("{:?} not found in function context", callee_name),
+                    _ => {
+                        #[cfg(feature = "string")]
+                        {
+                            if let Some(Value::String(callee)) = args.get(0) {
+                                return Evaluator::evaluate_str_method(
+                                    callee,
+                                    &callee_name,
+                                    args[1..].to_vec(),
+                                );
+                            }
+                        }
+                        bail!("{:?} not found in function context", callee_name)
+                    }
                 }
             }
             _ => {
-                // TODO: method
                 let callee = self.evaluate_expr(&expr.callee)?;
+
+                if let Value::String(callee) = &callee {
+                    #[cfg(feature = "string")]
+                    {
+                        let callee_name = expr.callee_name().unwrap_or_default();
+                        return Evaluator::evaluate_str_method(callee, &callee_name, args);
+                    }
+                    #[cfg(not(feature = "string"))]
+                    bail!("'string' feature is not enabled. callee: {:?}", callee)
+                }
+
                 bail!("Unsupported method for {:?}", callee);
             }
         }
@@ -248,6 +272,30 @@ impl Evaluator {
             Value::Number(number) => number.as_f64().map_or(false, |value| value != 0.0),
             Value::Object(_) => true,
             Value::String(str) => str != "",
+        }
+    }
+    #[cfg(feature = "string")]
+    fn evaluate_str_method(callee: &str, callee_name: &str, args: Vec<Value>) -> Result<Value> {
+        use method::string::StringMethod;
+
+        let str_method = StringMethod::new(args);
+        match callee_name {
+            "replace" => str_method.replace(callee),
+            "contains" => str_method.contains(callee),
+            "split" => str_method.split(callee),
+            "indexOf" => str_method.index_of(callee),
+            "lastIndexOf" => str_method.last_index_of(callee),
+            "toUpperCase" => str_method.to_upper_case(callee),
+            "toLowerCase" => str_method.to_lower_case(callee),
+            "substring" => str_method.substring(callee),
+            "startsWith" => str_method.starts_with(callee),
+            "endsWith" => str_method.ends_with(callee),
+            "regexReplace" => str_method.regex_replace(callee),
+            "length" => str_method.length(callee),
+            "trim" => str_method.trim(callee),
+            _ => {
+                bail!("Unknown string method: {}", callee_name);
+            }
         }
     }
 }
