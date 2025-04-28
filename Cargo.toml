@@ -14,3 +14,4 @@ optional = true
 
 [features]
 string = ["regex"]
+array = []

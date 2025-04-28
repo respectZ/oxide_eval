@@ -1,6 +1,6 @@
 mod bin_op;
 pub mod context;
-#[cfg(feature = "string")]
+#[cfg(any(feature = "string", feature = "array"))]
 mod method;
 mod unary;
 mod util;
@@ -156,6 +156,16 @@ impl Evaluator {
                                 );
                             }
                         }
+                        #[cfg(feature = "array")]
+                        {
+                            if let Some(Value::Array(callee)) = args.get(0) {
+                                return Evaluator::evaluate_array_method(
+                                    callee,
+                                    &callee_name,
+                                    args[1..].to_vec(),
+                                );
+                            }
+                        }
                         bail!("{:?} not found in function context", callee_name)
                     }
                 }
@@ -167,10 +177,18 @@ impl Evaluator {
                     #[cfg(feature = "string")]
                     {
                         let callee_name = expr.callee_name().unwrap_or_default();
-                        return Evaluator::evaluate_str_method(callee, &callee_name, args);
+                        return Evaluator::evaluate_str_method(callee, callee_name, args);
                     }
                     #[cfg(not(feature = "string"))]
                     bail!("'string' feature is not enabled. callee: {:?}", callee)
+                } else if let Value::Array(callee) = &callee {
+                    #[cfg(feature = "array")]
+                    {
+                        let callee_name = expr.callee_name().unwrap_or_default();
+                        return Evaluator::evaluate_array_method(callee, callee_name, args);
+                    }
+                    #[cfg(not(feature = "array"))]
+                    bail!("'array' feature is not enabled. callee: {:?}", callee)
                 }
 
                 bail!("Unsupported method for {:?}", callee);
@@ -296,6 +314,20 @@ impl Evaluator {
             _ => {
                 bail!("Unknown string method: {}", callee_name);
             }
+        }
+    }
+    #[cfg(feature = "array")]
+    fn evaluate_array_method(
+        callee: &Vec<Value>,
+        callee_name: &str,
+        args: Vec<Value>,
+    ) -> Result<Value> {
+        use method::array::ArrayMethod;
+
+        let array_method = ArrayMethod::new(args);
+        match callee_name {
+            "join" => array_method.join(callee),
+            _ => bail!("Unknown array method: {}", callee_name),
         }
     }
 }
