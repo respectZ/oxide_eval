@@ -51,7 +51,7 @@ impl Evaluator {
             bail!("Parsing error: {:?}", errors)
         }
         let program = parsed.program;
-        let stmt = &program.body.get(0);
+        let stmt = &program.body.first();
         match stmt {
             Some(Statement::ExpressionStatement(expr)) => self.evaluate_expr(&expr.expression),
             Some(stmt) => bail!("Unsupported statement: {:?}", stmt),
@@ -71,7 +71,7 @@ impl Evaluator {
             Expression::Identifier(expr) => self.evaluate_by_name(&expr.name),
             // Expression::MetaProperty()
             // Expression::Super()
-            Expression::ArrayExpression(expr) => self.evaluate_array(&expr),
+            Expression::ArrayExpression(expr) => self.evaluate_array(expr),
             // Expression::ArrowFunctionExpression()
             // Expression::AssignmentExpression()
             // Expression::AwaitExpression()
@@ -90,7 +90,7 @@ impl Evaluator {
             Expression::StaticMemberExpression(expr) => self.evaluate_static_member(expr),
             // Expression::TaggedTemplateExpression()
             // Expression::ThisExpression()
-            Expression::UnaryExpression(expr) => self.evaluate_unary(&expr),
+            Expression::UnaryExpression(expr) => self.evaluate_unary(expr),
             // Expression::UpdateExpression()
             // Expression::YieldExpression()
             // Expression::PrivateInExpression()
@@ -223,8 +223,8 @@ impl Evaluator {
     fn evaluate_chain(&self, expr: &ChainExpression) -> Result<Value> {
         let ex = &expr.expression;
         match ex {
-            ChainElement::CallExpression(expr) => self.evaluate_call(&expr),
-            ChainElement::StaticMemberExpression(expr) => self.evaluate_static_member(&expr),
+            ChainElement::CallExpression(expr) => self.evaluate_call(expr),
+            ChainElement::StaticMemberExpression(expr) => self.evaluate_static_member(expr),
             _ => bail!("Unsupported ChainExpression: {:?}", ex),
         }
     }
@@ -234,7 +234,7 @@ impl Evaluator {
             true => &expr.consequent,
             false => &expr.alternate,
         };
-        self.evaluate_expr(&expr)
+        self.evaluate_expr(expr)
     }
     fn evaluate_logical(&self, expr: &LogicalExpression) -> Result<Value> {
         let operator = expr.operator;
@@ -312,9 +312,9 @@ impl Evaluator {
             Value::Array(arr) => !arr.is_empty(),
             Value::Bool(bool) => *bool,
             Value::Null => false,
-            Value::Number(number) => number.as_f64().map_or(false, |value| value != 0.0),
+            Value::Number(number) => number.as_f64().is_some_and(|value| value != 0.0),
             Value::Object(_) => true,
-            Value::String(str) => str != "",
+            Value::String(str) => !str.is_empty(),
         }
     }
     #[cfg(feature = "string")]
