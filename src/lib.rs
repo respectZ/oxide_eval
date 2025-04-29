@@ -145,6 +145,10 @@ impl Evaluator {
         match &expr.callee {
             Expression::Identifier(expr) => {
                 let callee_name = expr.name.to_string();
+                #[cfg(feature = "semver-support")]
+                {
+                    mod semver;
+                }
                 match self.context.get(&callee_name) {
                     Some(ContextEntry::Function(f)) => Ok(f(args)),
                     _ => {
