@@ -42,7 +42,7 @@ impl Evaluator {
         let allocator = Allocator::default();
         let parser = Parser::new(&allocator, expression, SourceType::cjs());
         let parsed = parser.parse();
-        if parsed.errors.capacity() > 0 {
+        if parsed.errors.len() > 0 {
             let errors = parsed
                 .errors
                 .iter()
@@ -358,7 +358,7 @@ impl Evaluator {
     #[cfg(feature = "math")]
     fn evaluate_math_function(callee_name: &str, mut args: Vec<Value>) -> Result<Value> {
         let value = args.remove(0).take();
-        match args.capacity() {
+        match args.len() {
             1 => match callee_name {
                 "floor" => math::unary_function(value, f64::floor),
                 "ceil" => math::unary_function(value, f64::ceil),

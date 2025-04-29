@@ -22,10 +22,10 @@ pub fn unary_plus(value: Value) -> Result<Value> {
     }
 }
 pub fn evaluate_array(value: Vec<Value>) -> Result<Value> {
-    if value.capacity() == 0 {
+    if value.len() == 0 {
         return Ok(Value::Number(0.into()));
     }
-    if value.capacity() > 1 {
+    if value.len() > 1 {
         return Ok(Value::String("NaN".to_owned()));
     }
     let first = value.into_iter().next();
