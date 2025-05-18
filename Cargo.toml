@@ -2,7 +2,7 @@
 name = "oxide_eval"
 version = "0.1.0"
 edition = "2021"
-license = "gnu"
+license = "GPL-1.0-only"
 authors = ["renixiel@gmail.com"]
 description = "Oxide Eval is a simple Javascript Evaluator based on oxc."
 repository = "https://github.com/respectZ/oxide_eval/"
