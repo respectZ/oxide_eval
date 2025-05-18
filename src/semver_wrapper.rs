@@ -6,22 +6,22 @@ use serde_json::Value;
 use crate::util::value_to_number;
 
 #[derive(Serialize, Deserialize)]
-pub struct SemverParser {
+pub struct SemverWrapper {
     pub version: Version,
 }
 
-impl SemverParser {
+impl SemverWrapper {
     pub fn new(major: Value, minor: Value, patch: Value) -> Result<Self> {
         let major = value_to_number(major)? as u64;
         let minor = value_to_number(minor)? as u64;
         let patch = value_to_number(patch)? as u64;
-        Ok(SemverParser {
+        Ok(SemverWrapper {
             version: Version::new(major, minor, patch),
         })
     }
     pub fn from_value(value: Value) -> Result<Self> {
         match value {
-            Value::String(value) => Ok(SemverParser {
+            Value::String(value) => Ok(SemverWrapper {
                 version: Version::parse(&value)?,
             }),
             Value::Array(value) => {
@@ -46,6 +46,18 @@ impl SemverParser {
                 Self::new(major, minor, patch)
             }
             _ => bail!("unsupported value type for semver parser: {:?}", value),
+        }
+    }
+    pub fn from_values(mut args: Vec<Value>) -> Result<Self> {
+        match args.len() {
+            1 => Self::from_value(args.remove(0)),
+            3 => {
+                let patch = args.pop().unwrap();
+                let minor = args.pop().unwrap();
+                let major = args.pop().unwrap();
+                Self::new(major, minor, patch)
+            }
+            _ => bail!("semver requires either 1 or 3 args"),
         }
     }
 }
