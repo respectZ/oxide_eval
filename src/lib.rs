@@ -27,7 +27,7 @@ use oxc::{
     span::SourceType,
 };
 use serde::Deserialize;
-use serde_json::{json, to_string, Map, Value};
+use serde_json::{to_string, Map, Value};
 use std::collections::HashMap;
 use unary::{unary_bitwise_not, unary_negation, unary_plus};
 use util::number_from_f64;
@@ -177,7 +177,7 @@ impl Evaluator {
                 {
                     use semver_wrapper::SemverWrapper;
                     if callee_name == "semver" {
-                        return Ok(json!(SemverWrapper::from_values(args)?));
+                        return Ok(serde_json::json!(SemverWrapper::from_values(args)?));
                     }
                 }
 
