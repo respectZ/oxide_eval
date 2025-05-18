@@ -8,6 +8,9 @@ description = "Oxide Eval is a simple Javascript Evaluator based on oxc."
 repository = "https://github.com/respectZ/oxide_eval/"
 readme = "README.md"
 keywords = ["eval", "evaluator", "js", "javascript", "js-eval"]
+exclude = [
+  "tests/*"
+]
 
 [dependencies]
 oxc = "^0.66.0"
