@@ -26,7 +26,6 @@ use oxc::{
     parser::Parser,
     span::SourceType,
 };
-use serde::Deserialize;
 use serde_json::{to_string, Map, Value};
 use std::collections::HashMap;
 use unary::{unary_bitwise_not, unary_negation, unary_plus};
@@ -116,6 +115,7 @@ impl Evaluator {
         #[cfg(feature = "semver-support")]
         {
             use semver_wrapper::SemverWrapper;
+            use serde::Deserialize;
             if let (Ok(left), Ok(right)) = (
                 SemverWrapper::deserialize(&left),
                 SemverWrapper::deserialize(&right),
