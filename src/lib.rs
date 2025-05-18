@@ -4,6 +4,8 @@ pub mod context;
 mod math;
 #[cfg(any(feature = "string", feature = "array"))]
 mod method;
+#[cfg(feature = "semver-support")]
+mod semver_wrapper;
 mod unary;
 mod util;
 
@@ -24,7 +26,8 @@ use oxc::{
     parser::Parser,
     span::SourceType,
 };
-use serde_json::{to_string, Map, Value};
+use serde::Deserialize;
+use serde_json::{json, to_string, Map, Value};
 use std::collections::HashMap;
 use unary::{unary_bitwise_not, unary_negation, unary_plus};
 use util::number_from_f64;
@@ -110,6 +113,30 @@ impl Evaluator {
         let left = self.evaluate_expr(&expr.left)?;
         let right = self.evaluate_expr(&expr.right)?;
 
+        #[cfg(feature = "semver-support")]
+        {
+            use semver_wrapper::SemverWrapper;
+            if let (Ok(left), Ok(right)) = (
+                SemverWrapper::deserialize(&left),
+                SemverWrapper::deserialize(&right),
+            ) {
+                let cmp = left.version.cmp_precedence(&right.version);
+                let result = match expr.operator {
+                    BinaryOperator::Equality | BinaryOperator::StrictEquality => cmp.is_eq(),
+                    BinaryOperator::Inequality | BinaryOperator::StrictInequality => !cmp.is_eq(),
+                    BinaryOperator::LessThan => cmp.is_lt(),
+                    BinaryOperator::LessEqualThan => cmp.is_le(),
+                    BinaryOperator::GreaterThan => cmp.is_gt(),
+                    BinaryOperator::GreaterEqualThan => cmp.is_gt(),
+                    _ => bail!(
+                        "Unsupported binary operator for semver: {:?}",
+                        expr.operator
+                    ),
+                };
+                return Ok(Value::Bool(result));
+            }
+        }
+
         match expr.operator {
             BinaryOperator::Equality => Ok(Value::Bool(equality(&left, &right, false))),
             BinaryOperator::Inequality => Ok(Value::Bool(!equality(&left, &right, false))),
@@ -141,10 +168,19 @@ impl Evaluator {
             .arguments
             .iter()
             .map(|f| self.evaluate_expr(f.to_expression()).unwrap())
-            .collect();
+            .collect::<Vec<Value>>();
         match &expr.callee {
             Expression::Identifier(expr) => {
                 let callee_name = expr.name.to_string();
+
+                #[cfg(feature = "semver-support")]
+                {
+                    use semver_wrapper::SemverWrapper;
+                    if callee_name == "semver" {
+                        return Ok(json!(SemverWrapper::from_values(args)?));
+                    }
+                }
+
                 match self.context.get(&callee_name) {
                     Some(ContextEntry::Function(f)) => Ok(f(args)),
                     _ => {
