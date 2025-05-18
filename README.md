@@ -29,3 +29,7 @@ let evaluator = Evaluator::new(context);
 let res = evaluator.evaluate("a + mul(2)").unwrap();
 assert_eq!(res, 44);
 ```
+
+## Credits
+
+- [oxc](https://github.com/oxc-project/oxc)
