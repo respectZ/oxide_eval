@@ -331,6 +331,7 @@ impl Evaluator {
             UnaryOperator::UnaryPlus => unary_plus(value),
             UnaryOperator::UnaryNegation => unary_negation(value),
             UnaryOperator::BitwiseNot => unary_bitwise_not(value),
+            UnaryOperator::LogicalNot => Ok(Value::Bool(!self.evaluate_value(&value))),
             _ => {
                 bail!("Unsupported UnaryOperator {:?}", operator)
             }

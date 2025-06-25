@@ -156,6 +156,8 @@ fn test_unary() {
     let res22 = evaluator.evaluate("~\"4444.2\"").unwrap();
     let res23 = evaluator.evaluate("~26.5").unwrap();
 
+    let res24 = evaluator.evaluate("!26.5").unwrap();
+
     assert_eq!(res1, 2.4);
     assert_eq!(res2, 2.5);
     assert_eq!(res3, 2.6);
@@ -181,6 +183,8 @@ fn test_unary() {
     assert_eq!(res21, -1);
     assert_eq!(res22, -4445);
     assert_eq!(res23, -27);
+
+    assert_eq!(res24, false);
 }
 
 #[test]
