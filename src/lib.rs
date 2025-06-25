@@ -1,5 +1,6 @@
 mod bin_op;
 pub mod context;
+mod error;
 #[cfg(feature = "math")]
 mod math;
 #[cfg(any(feature = "string", feature = "array"))]
@@ -9,7 +10,7 @@ mod semver_wrapper;
 mod unary;
 mod util;
 
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use bin_op::{
     addition, bitwise_operation, compare, division, equality, exponential, multiplication,
     remainder, subtraction, unsigned_right_shift,
@@ -30,6 +31,8 @@ use serde_json::{to_string, Map, Value};
 use std::collections::HashMap;
 use unary::{unary_bitwise_not, unary_negation, unary_plus};
 use util::number_from_f64;
+
+use crate::error::EvaluatorError;
 
 pub struct Evaluator {
     context: HashMap<String, ContextEntry>,
@@ -311,15 +314,35 @@ impl Evaluator {
         Ok(Value::Object(map))
     }
     fn evaluate_static_member(&self, expr: &StaticMemberExpression) -> Result<Value> {
-        let obj = self.evaluate_expr(&expr.object)?;
+        let obj = if expr.optional {
+            match self.evaluate_expr(&expr.object) {
+                Ok(value) => value,
+                Err(e) => {
+                    if e.downcast_ref::<EvaluatorError>().map_or(false, |err| {
+                        matches!(err, EvaluatorError::VariableNotFound(_))
+                    }) {
+                        return Ok(Value::Null);
+                    }
+                    return Err(e);
+                }
+            }
+        } else {
+            self.evaluate_expr(&expr.object)?
+        };
         let property = expr.property.name.to_string();
-        match obj {
+        match &obj {
             Value::Object(map) => {
                 let value = map.get(&property);
                 if let Some(value) = value {
                     return Ok(value.clone());
                 }
-                Ok(Value::Null)
+                if expr.optional {
+                    return Ok(Value::Null);
+                }
+                Err(anyhow!(EvaluatorError::PropertyNotFound(
+                    obj.to_string(),
+                    property.clone(),
+                )))
             }
             _ => Ok(obj),
         }
@@ -341,7 +364,7 @@ impl Evaluator {
     fn evaluate_by_name(&self, name: &str) -> Result<Value> {
         match self.context.get(name) {
             Some(ContextEntry::Variable(value)) => Ok(value.clone()),
-            _ => bail!("{:?} not found in variable context", name),
+            _ => Err(anyhow!(EvaluatorError::VariableNotFound(name.to_string()))),
         }
     }
     fn evaluate_value(&self, value: &Value) -> bool {

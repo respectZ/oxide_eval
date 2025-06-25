@@ -210,9 +210,11 @@ fn test_chain() {
     let evaluator = Evaluator::new(context);
     let res1 = evaluator.evaluate("c.b.a").unwrap();
     let res2 = evaluator.evaluate("c.b?.d").unwrap();
+    let res3 = evaluator.evaluate("settings?.ok").unwrap();
 
     assert_eq!(res1, 32);
     assert_eq!(res2, Value::Null);
+    assert_eq!(res3, Value::Null);
 }
 
 #[test]
