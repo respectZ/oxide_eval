@@ -229,3 +229,12 @@ fn test_banana() {
 
     assert_eq!(res, "baNaNa");
 }
+
+#[test]
+fn test_directive() {
+    use oxide_eval::Evaluator;
+
+    let evaluator = Evaluator::new(std::collections::HashMap::new());
+    let res = evaluator.evaluate("'directive'").unwrap();
+    assert_eq!(res, "directive");
+}

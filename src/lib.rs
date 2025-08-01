@@ -60,7 +60,13 @@ impl Evaluator {
         match stmt {
             Some(Statement::ExpressionStatement(expr)) => self.evaluate_expr(&expr.expression),
             Some(stmt) => bail!("Unsupported statement: {:?}", stmt),
-            None => bail!("No statements found"),
+            None => {
+                let directive = &program.directives.first();
+                if let Some(directive) = directive {
+                    return Ok(Value::String(directive.directive.into_string()));
+                }
+                bail!("No statements found")
+            }
         }
     }
 
