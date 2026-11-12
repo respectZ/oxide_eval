@@ -242,7 +242,7 @@ impl Evaluator {
                         }
                         #[cfg(feature = "math")]
                         {
-                            if let Some(Value::Number(_)) = args.get(0) {
+                            if matches!(args.first(), Some(Value::Number(_) | Value::String(_))) {
                                 return Evaluator::evaluate_math_function(&callee_name, args);
                             }
                         }
@@ -432,10 +432,11 @@ impl Evaluator {
         }
     }
     #[cfg(feature = "math")]
-    fn evaluate_math_function(callee_name: &str, mut args: Vec<Value>) -> Result<Value> {
-        let value = args.remove(0).take();
+    fn evaluate_math_function(callee_name: &str, args: Vec<Value>) -> Result<Value> {
+        let mut args = args.into_iter();
+        let value = args.next().ok_or_else(|| anyhow!("Math functions require arguments"))?;
         match args.len() {
-            1 => match callee_name {
+            0 => match callee_name {
                 "floor" => math::unary_function(value, f64::floor),
                 "ceil" => math::unary_function(value, f64::ceil),
                 "round" => math::unary_function(value, f64::round),
@@ -451,8 +452,8 @@ impl Evaluator {
                 "bitwiseNot" => unary_bitwise_not(value),
                 _ => bail!("{:?} not found in function context", callee_name),
             },
-            2 => {
-                let second = args.remove(0).take();
+            1 => {
+                let second = args.next().ok_or_else(|| anyhow!("Missing second argument"))?;
                 match callee_name {
                     "atan2" => math::binary_function(value, second, f64::atan2),
                     "min" => math::binary_function(value, second, f64::min),

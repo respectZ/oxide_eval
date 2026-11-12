@@ -1,3 +1,5 @@
+#![cfg(feature = "math")]
+
 #[cfg(test)]
 #[test]
 fn test_unary() {
@@ -96,4 +98,12 @@ fn test_binary() {
     assert_eq!(res7, 6);
     assert_eq!(res8, 8);
     assert_eq!(res9, 2);
+}
+
+#[test]
+fn math_rejects_incorrect_arity() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for expression in ["floor()", "floor(1, 2)", "min(1)", "min(1, 2, 3)"] {
+        assert!(evaluator.evaluate(expression).is_err(), "{expression}");
+    }
 }
