@@ -156,11 +156,11 @@ impl Evaluator {
             BinaryOperator::Inequality => Ok(Value::Bool(!equality(&left, &right, false))),
             BinaryOperator::StrictEquality => Ok(Value::Bool(equality(&left, &right, true))),
             BinaryOperator::StrictInequality => Ok(Value::Bool(!equality(&left, &right, true))),
-            BinaryOperator::LessThan => Ok(Value::Bool(compare(&left, &right, |l, r| l < r))),
-            BinaryOperator::LessEqualThan => Ok(Value::Bool(compare(&left, &right, |l, r| l <= r))),
-            BinaryOperator::GreaterThan => Ok(Value::Bool(compare(&left, &right, |l, r| l > r))),
+            BinaryOperator::LessThan => Ok(Value::Bool(compare(left, right, |cmp| cmp.is_lt())?)),
+            BinaryOperator::LessEqualThan => Ok(Value::Bool(compare(left, right, |cmp| cmp.is_le())?)),
+            BinaryOperator::GreaterThan => Ok(Value::Bool(compare(left, right, |cmp| cmp.is_gt())?)),
             BinaryOperator::GreaterEqualThan => {
-                Ok(Value::Bool(compare(&left, &right, |l, r| l >= r)))
+                Ok(Value::Bool(compare(left, right, |cmp| cmp.is_ge())?))
             }
             BinaryOperator::Addition => addition(left, right),
             BinaryOperator::Subtraction => subtraction(left, right),

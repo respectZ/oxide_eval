@@ -271,3 +271,21 @@ fn logical_operators_short_circuit_and_return_operands() {
     }
     assert!(evaluator.evaluate("true && missing").is_err());
 }
+
+#[test]
+fn relational_operators_compare_numbers_numerically() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for expression in [
+        "2 < 10",
+        "10 > 2",
+        "'2' < 10",
+        "true < 2",
+        "null <= 0",
+        "10 >= 10",
+        "'2' > '10'",
+        "'😀' < '\\uE000'",
+    ] {
+        assert_eq!(evaluator.evaluate(expression).unwrap(), true, "{expression}");
+    }
+    assert_eq!(evaluator.evaluate("2 > 10").unwrap(), false);
+}

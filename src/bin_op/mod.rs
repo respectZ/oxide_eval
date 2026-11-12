@@ -7,7 +7,6 @@ mod exponential;
 mod multiplication;
 mod remainder;
 mod subtraction;
-mod util;
 
 pub use self::addition::*;
 pub use self::bitwise::*;
