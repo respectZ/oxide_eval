@@ -292,21 +292,16 @@ impl Evaluator {
         self.evaluate_expr(expr)
     }
     fn evaluate_logical(&self, expr: &LogicalExpression) -> Result<Value> {
-        let operator = expr.operator;
-        let left = &self.evaluate_expr(&expr.left)?;
-        let right = &self.evaluate_expr(&expr.right)?;
-        match operator {
-            LogicalOperator::And => Ok(Value::Bool(
-                self.evaluate_value(left) && self.evaluate_value(right),
-            )),
-            LogicalOperator::Coalesce => match left {
-                Value::Null => Ok(right.clone()),
-                _ => Ok(left.clone()),
-            },
-            LogicalOperator::Or => match self.evaluate_value(left) {
-                true => Ok(left.clone()),
-                false => Ok(right.clone()),
-            },
+        let left = self.evaluate_expr(&expr.left)?;
+        let evaluate_right = match expr.operator {
+            LogicalOperator::And => self.evaluate_value(&left),
+            LogicalOperator::Or => !self.evaluate_value(&left),
+            LogicalOperator::Coalesce => left.is_null(),
+        };
+        if evaluate_right {
+            self.evaluate_expr(&expr.right)
+        } else {
+            Ok(left)
         }
     }
     fn evaluate_object(&self, expr: &ObjectExpression) -> Result<Value> {
@@ -385,7 +380,7 @@ impl Evaluator {
     }
     fn evaluate_value(&self, value: &Value) -> bool {
         match value {
-            Value::Array(arr) => !arr.is_empty(),
+            Value::Array(_) => true,
             Value::Bool(bool) => *bool,
             Value::Null => false,
             Value::Number(number) => number.as_f64().is_some_and(|value| value != 0.0),

@@ -252,3 +252,22 @@ fn invalid_array_elements_and_arguments_return_errors() {
         assert!(evaluator.evaluate(expression).is_err(), "{expression}");
     }
 }
+
+#[test]
+fn logical_operators_short_circuit_and_return_operands() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for (expression, expected) in [
+        ("false && missing", serde_json::json!(false)),
+        ("true || missing", serde_json::json!(true)),
+        ("1 ?? missing", serde_json::json!(1)),
+        ("2 && 3", serde_json::json!(3)),
+        ("0 && 3", serde_json::json!(0)),
+        ("0 || 3", serde_json::json!(3)),
+        ("null ?? 3", serde_json::json!(3)),
+        ("[] ? 1 : 2", serde_json::json!(1)),
+        ("![]", serde_json::json!(false)),
+    ] {
+        assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
+    }
+    assert!(evaluator.evaluate("true && missing").is_err());
+}
