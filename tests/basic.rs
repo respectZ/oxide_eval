@@ -238,3 +238,17 @@ fn test_directive() {
     let res = evaluator.evaluate("'directive'").unwrap();
     assert_eq!(res, "directive");
 }
+
+#[test]
+fn invalid_array_elements_and_arguments_return_errors() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for expression in [
+        "[missing]",
+        "call(missing)",
+        "[,]",
+        "[...[1, 2]]",
+        "call(...[1, 2])",
+    ] {
+        assert!(evaluator.evaluate(expression).is_err(), "{expression}");
+    }
+}

@@ -113,8 +113,13 @@ impl Evaluator {
         let result = expr
             .elements
             .iter()
-            .map(|f| self.evaluate_expr(f.to_expression()).unwrap())
-            .collect::<Vec<Value>>();
+            .map(|element| {
+                let expression = element
+                    .as_expression()
+                    .ok_or_else(|| anyhow!("Array holes and spread elements are not supported"))?;
+                self.evaluate_expr(expression)
+            })
+            .collect::<Result<Vec<Value>>>()?;
         Ok(Value::Array(result))
     }
     fn evaluate_binary(&self, expr: &BinaryExpression) -> Result<Value> {
@@ -176,8 +181,13 @@ impl Evaluator {
         let args = expr
             .arguments
             .iter()
-            .map(|f| self.evaluate_expr(f.to_expression()).unwrap())
-            .collect::<Vec<Value>>();
+            .map(|argument| {
+                let expression = argument
+                    .as_expression()
+                    .ok_or_else(|| anyhow!("Spread arguments are not supported"))?;
+                self.evaluate_expr(expression)
+            })
+            .collect::<Result<Vec<Value>>>()?;
         match &expr.callee {
             Expression::Identifier(expr) => {
                 let callee_name = expr.name.to_string();
