@@ -7,7 +7,8 @@ pub static OBJ_STR: &str = "[object Object]";
 pub static NULL_STR: &str = "null";
 
 pub fn number_from_f64(value: f64) -> Result<Number> {
-    if value.fract() == 0.0 {
+    // i64::MAX rounds up to 2^63 as f64, so the upper bound is exclusive.
+    if value.fract() == 0.0 && value >= i64::MIN as f64 && value < i64::MAX as f64 {
         Ok(Number::from(value as i64))
     } else {
         Number::from_f64(value).ok_or_else(|| anyhow!("Invalid float number: {}", value))

@@ -309,3 +309,16 @@ fn member_access_reads_properties_instead_of_returning_receivers() {
         assert!(evaluator.evaluate(expression).is_err(), "{expression}");
     }
 }
+
+#[test]
+fn large_numbers_are_not_clamped_to_i64() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for (expression, expected) in [
+        ("9223372036854775808", 9223372036854775808.0),
+        ("1e30", 1e30),
+        ("-1e30", -1e30),
+        ("1e20 * 1e10", 1e30),
+    ] {
+        assert_eq!(evaluator.evaluate(expression).unwrap(), serde_json::json!(expected), "{expression}");
+    }
+}
