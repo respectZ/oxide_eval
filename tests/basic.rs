@@ -351,3 +351,11 @@ fn invalid_numeric_coercions_do_not_become_zero() {
     assert_eq!(evaluator.evaluate("[null] * 2").unwrap(), 0);
     assert_eq!(evaluator.evaluate("' 3 ' * 2").unwrap(), 6);
 }
+
+#[test]
+fn zero_dividend_has_zero_remainder() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    assert_eq!(evaluator.evaluate("0 % 3").unwrap(), 0);
+    assert_eq!(evaluator.evaluate("5 % 2").unwrap(), 1);
+    assert!(evaluator.evaluate("0 % 0").is_err());
+}
