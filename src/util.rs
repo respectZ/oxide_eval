@@ -14,6 +14,13 @@ pub fn number_from_f64(value: f64) -> Result<Number> {
     }
 }
 
+pub fn number_to_uint32(value: f64) -> u32 {
+    if !value.is_finite() || value == 0.0 {
+        return 0;
+    }
+    value.trunc().rem_euclid(4294967296.0) as u32
+}
+
 pub fn vec_to_js_string(vec: &[Value]) -> String {
     vec.iter()
         .map(|v| match v {

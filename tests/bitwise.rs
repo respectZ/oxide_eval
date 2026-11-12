@@ -14,3 +14,18 @@ fn test_unsigned_right_shift() {
     assert_eq!(res2, result);
     assert_eq!(res3, result);
 }
+
+#[test]
+fn bitwise_operators_wrap_to_32_bits() {
+    let evaluator = Evaluator::new(Default::default());
+    for (expression, expected) in [
+        ("4294967296 | 0", 0_i64),
+        ("2147483648 | 0", -2147483648),
+        ("~4294967296", -1),
+        ("-1 >>> 0", 4294967295),
+        ("1 << 4294967296", 1),
+        ("1 << -1", -2147483648),
+    ] {
+        assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
+    }
+}
