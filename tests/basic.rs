@@ -267,7 +267,11 @@ fn logical_operators_short_circuit_and_return_operands() {
         ("[] ? 1 : 2", serde_json::json!(1)),
         ("![]", serde_json::json!(false)),
     ] {
-        assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
+        assert_eq!(
+            evaluator.evaluate(expression).unwrap(),
+            expected,
+            "{expression}"
+        );
     }
     assert!(evaluator.evaluate("true && missing").is_err());
 }
@@ -285,7 +289,11 @@ fn relational_operators_compare_numbers_numerically() {
         "'2' > '10'",
         "'😀' < '\\uE000'",
     ] {
-        assert_eq!(evaluator.evaluate(expression).unwrap(), true, "{expression}");
+        assert_eq!(
+            evaluator.evaluate(expression).unwrap(),
+            true,
+            "{expression}"
+        );
     }
     assert_eq!(evaluator.evaluate("2 > 10").unwrap(), false);
 }
@@ -293,10 +301,17 @@ fn relational_operators_compare_numbers_numerically() {
 #[test]
 fn object_keys_are_property_names() {
     let evaluator = oxide_eval::Evaluator::new(Default::default());
-    for expression in ["({foo: 1}).foo", "({'foo': 1}).foo", "({['f' + 'oo']: 1}).foo"] {
+    for expression in [
+        "({foo: 1}).foo",
+        "({'foo': 1}).foo",
+        "({['f' + 'oo']: 1}).foo",
+    ] {
         assert_eq!(evaluator.evaluate(expression).unwrap(), 1, "{expression}");
     }
-    assert_eq!(evaluator.evaluate("({[1 + 1]: 3})").unwrap(), serde_json::json!({"2": 3}));
+    assert_eq!(
+        evaluator.evaluate("({[1 + 1]: 3})").unwrap(),
+        serde_json::json!({"2": 3})
+    );
 }
 
 #[test]
@@ -304,7 +319,10 @@ fn member_access_reads_properties_instead_of_returning_receivers() {
     let evaluator = oxide_eval::Evaluator::new(Default::default());
     assert_eq!(evaluator.evaluate("'é😀'.length").unwrap(), 3);
     assert_eq!(evaluator.evaluate("[1, 2].length").unwrap(), 2);
-    assert_eq!(evaluator.evaluate("null?.foo").unwrap(), serde_json::Value::Null);
+    assert_eq!(
+        evaluator.evaluate("null?.foo").unwrap(),
+        serde_json::Value::Null
+    );
     for expression in ["(42).foo", "null.foo", "'abc'.unknown"] {
         assert!(evaluator.evaluate(expression).is_err(), "{expression}");
     }
@@ -319,7 +337,11 @@ fn large_numbers_are_not_clamped_to_i64() {
         ("-1e30", -1e30),
         ("1e20 * 1e10", 1e30),
     ] {
-        assert_eq!(evaluator.evaluate(expression).unwrap(), serde_json::json!(expected), "{expression}");
+        assert_eq!(
+            evaluator.evaluate(expression).unwrap(),
+            serde_json::json!(expected),
+            "{expression}"
+        );
     }
 }
 
@@ -337,7 +359,11 @@ fn loose_equality_coerces_primitives_but_strict_equality_does_not() {
         ("true === 1", false),
         ("[] === false", false),
     ] {
-        assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
+        assert_eq!(
+            evaluator.evaluate(expression).unwrap(),
+            expected,
+            "{expression}"
+        );
     }
 }
 
@@ -363,8 +389,5 @@ fn zero_dividend_has_zero_remainder() {
 #[test]
 fn standalone_strings_decode_escapes() {
     let evaluator = oxide_eval::Evaluator::new(Default::default());
-    assert_eq!(
-        evaluator.evaluate(r#"'a\n\u0062\\c'"#).unwrap(),
-        "a\nb\\c"
-    );
+    assert_eq!(evaluator.evaluate(r#"'a\n\u0062\\c'"#).unwrap(), "a\nb\\c");
 }

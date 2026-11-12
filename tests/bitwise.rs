@@ -26,6 +26,10 @@ fn bitwise_operators_wrap_to_32_bits() {
         ("1 << 4294967296", 1),
         ("1 << -1", -2147483648),
     ] {
-        assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
+        assert_eq!(
+            evaluator.evaluate(expression).unwrap(),
+            expected,
+            "{expression}"
+        );
     }
 }

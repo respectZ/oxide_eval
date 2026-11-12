@@ -109,7 +109,11 @@ fn utf16_string_indices() {
         ("'é😀x'.lastIndexOf('')", 4),
         ("'é😀x'.indexOf('missing')", -1),
     ] {
-        assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
+        assert_eq!(
+            evaluator.evaluate(expression).unwrap(),
+            expected,
+            "{expression}"
+        );
     }
 }
 
@@ -124,7 +128,11 @@ fn substring_normalizes_bounds_without_panicking() {
         ("'é😀x'.substring(100)", ""),
         ("'é😀x'.substring(2, 2)", ""),
     ] {
-        assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
+        assert_eq!(
+            evaluator.evaluate(expression).unwrap(),
+            expected,
+            "{expression}"
+        );
     }
     assert!(evaluator.evaluate("'😀'.substring(0, 1)").is_err());
 }

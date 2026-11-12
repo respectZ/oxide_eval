@@ -157,8 +157,12 @@ impl Evaluator {
             BinaryOperator::StrictEquality => Ok(Value::Bool(equality(left, right, true)?)),
             BinaryOperator::StrictInequality => Ok(Value::Bool(!equality(left, right, true)?)),
             BinaryOperator::LessThan => Ok(Value::Bool(compare(left, right, |cmp| cmp.is_lt())?)),
-            BinaryOperator::LessEqualThan => Ok(Value::Bool(compare(left, right, |cmp| cmp.is_le())?)),
-            BinaryOperator::GreaterThan => Ok(Value::Bool(compare(left, right, |cmp| cmp.is_gt())?)),
+            BinaryOperator::LessEqualThan => {
+                Ok(Value::Bool(compare(left, right, |cmp| cmp.is_le())?))
+            }
+            BinaryOperator::GreaterThan => {
+                Ok(Value::Bool(compare(left, right, |cmp| cmp.is_gt())?))
+            }
             BinaryOperator::GreaterEqualThan => {
                 Ok(Value::Bool(compare(left, right, |cmp| cmp.is_ge())?))
             }
@@ -435,7 +439,9 @@ impl Evaluator {
     #[cfg(feature = "math")]
     fn evaluate_math_function(callee_name: &str, args: Vec<Value>) -> Result<Value> {
         let mut args = args.into_iter();
-        let value = args.next().ok_or_else(|| anyhow!("Math functions require arguments"))?;
+        let value = args
+            .next()
+            .ok_or_else(|| anyhow!("Math functions require arguments"))?;
         match args.len() {
             0 => match callee_name {
                 "floor" => math::unary_function(value, f64::floor),
@@ -454,7 +460,9 @@ impl Evaluator {
                 _ => bail!("{:?} not found in function context", callee_name),
             },
             1 => {
-                let second = args.next().ok_or_else(|| anyhow!("Missing second argument"))?;
+                let second = args
+                    .next()
+                    .ok_or_else(|| anyhow!("Missing second argument"))?;
                 match callee_name {
                     "atan2" => math::binary_function(value, second, f64::atan2),
                     "min" => math::binary_function(value, second, f64::min),

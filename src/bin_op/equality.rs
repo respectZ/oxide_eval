@@ -11,9 +11,9 @@ pub fn equality(left: Value, right: Value, strict: bool) -> Result<bool> {
         (Value::Bool(left), Value::Bool(right)) => left == right,
         _ if strict => false,
         (Value::Number(number), Value::String(string))
-        | (Value::String(string), Value::Number(number)) => {
-            number.as_f64().is_some_and(|number| number == string_to_number(string))
-        }
+        | (Value::String(string), Value::Number(number)) => number
+            .as_f64()
+            .is_some_and(|number| number == string_to_number(string)),
         (Value::Bool(value), _) => {
             return equality(Value::from(i32::from(*value)), right, false);
         }

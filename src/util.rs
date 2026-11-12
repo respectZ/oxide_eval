@@ -26,7 +26,10 @@ pub fn string_to_number(value: &str) -> f64 {
         "" => 0.0,
         "Infinity" | "+Infinity" => f64::INFINITY,
         "-Infinity" => f64::NEG_INFINITY,
-        _ if value.bytes().any(|c| c.is_ascii_alphabetic() && c != b'e' && c != b'E') => {
+        _ if value
+            .bytes()
+            .any(|c| c.is_ascii_alphabetic() && c != b'e' && c != b'E') =>
+        {
             f64::NAN
         }
         _ => value.parse().unwrap_or(f64::NAN),
