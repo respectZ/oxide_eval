@@ -1,3 +1,5 @@
+#![cfg(feature = "array")]
+
 #[cfg(test)]
 #[test]
 fn test_method() {
@@ -24,4 +26,33 @@ fn test_method() {
 
     assert_eq!(res1, "a b c");
     assert_eq!(res2, "1-2-3");
+}
+
+#[test]
+fn join_preserves_mixed_values() {
+    let evaluator = oxide_eval::Evaluator::new(std::collections::HashMap::new());
+
+    assert_eq!(
+        evaluator.evaluate("['a',1,null,false].join('-')").unwrap(),
+        "a-1--false"
+    );
+}
+
+#[test]
+fn join_converts_nested_values() {
+    let evaluator = oxide_eval::Evaluator::new(std::collections::HashMap::new());
+
+    assert_eq!(
+        evaluator
+            .evaluate("[[1,null,[false,'a']],{x:1},null].join('-')")
+            .unwrap(),
+        "1,,false,a-[object Object]-"
+    );
+}
+
+#[test]
+fn join_empty_array() {
+    let evaluator = oxide_eval::Evaluator::new(std::collections::HashMap::new());
+
+    assert_eq!(evaluator.evaluate("[].join('-')").unwrap(), "");
 }

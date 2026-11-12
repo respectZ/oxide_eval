@@ -1,5 +1,9 @@
+use std::fmt::Write;
+
 use anyhow::{anyhow, bail, Result};
 use serde_json::Value;
+
+use crate::util::{vec_to_js_string, OBJ_STR};
 
 pub struct ArrayMethod {
     args: Vec<Value>,
@@ -20,12 +24,20 @@ impl ArrayMethod {
             bail!("join method requires 1 argument")
         }
         let delimiter = self.get_string_argument(0)?;
-        let result: Vec<String> = arr
-            .iter()
-            .filter_map(|v| v.as_str())
-            .map(|s| s.to_string())
-            .collect();
-        let joined = result.join(delimiter);
+        let mut joined = String::new();
+        for (index, value) in arr.iter().enumerate() {
+            if index > 0 {
+                joined.push_str(delimiter);
+            }
+            match value {
+                Value::Null => {}
+                Value::Bool(value) => joined.push_str(if *value { "true" } else { "false" }),
+                Value::Number(value) => write!(&mut joined, "{}", value)?,
+                Value::String(value) => joined.push_str(value),
+                Value::Array(value) => joined.push_str(&vec_to_js_string(value)),
+                Value::Object(_) => joined.push_str(OBJ_STR),
+            }
+        }
         Ok(Value::String(joined))
     }
 }
