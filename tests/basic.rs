@@ -340,3 +340,14 @@ fn loose_equality_coerces_primitives_but_strict_equality_does_not() {
         assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
     }
 }
+
+#[test]
+fn invalid_numeric_coercions_do_not_become_zero() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for expression in ["'garbage' * 2", "[1, 2] - 0", "[true] * 2"] {
+        assert!(evaluator.evaluate(expression).is_err(), "{expression}");
+    }
+    assert_eq!(evaluator.evaluate("'garbage' < 1").unwrap(), false);
+    assert_eq!(evaluator.evaluate("[null] * 2").unwrap(), 0);
+    assert_eq!(evaluator.evaluate("' 3 ' * 2").unwrap(), 6);
+}

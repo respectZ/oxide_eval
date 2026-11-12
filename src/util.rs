@@ -1,8 +1,6 @@
 use anyhow::{anyhow, Result};
 use serde_json::{Number, Value};
 
-use crate::unary::unary_plus;
-
 pub static OBJ_STR: &str = "[object Object]";
 pub static NULL_STR: &str = "null";
 
@@ -62,11 +60,8 @@ pub fn value_to_number(value: Value) -> Result<f64> {
         Value::Null => Ok(0.0),
         Value::Bool(b) => Ok(if b { 1.0 } else { 0.0 }),
         Value::Number(n) => Ok(n.as_f64().unwrap_or_default()),
-        Value::String(s) => Ok(s.parse::<f64>().unwrap_or(0.0)),
-        Value::Array(arr) => match unary_plus(Value::Array(arr))? {
-            Value::Number(n) => Ok(n.as_f64().unwrap_or_default()),
-            _ => Ok(0.0),
-        },
+        Value::String(s) => Ok(string_to_number(&s)),
+        Value::Array(arr) => Ok(string_to_number(&vec_to_js_string(&arr))),
         Value::Object(_) => Ok(f64::NAN),
     }
 }
