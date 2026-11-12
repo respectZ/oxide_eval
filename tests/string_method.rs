@@ -1,3 +1,5 @@
+#![cfg(feature = "string")]
+
 #[cfg(test)]
 #[test]
 fn test_method() {
@@ -95,4 +97,34 @@ fn test_function() {
     assert_eq!(res11, "HLLLL WLLLL!");
     assert_eq!(res12, 12);
     assert_eq!(res13, "Hello World!");
+}
+
+#[test]
+fn utf16_string_indices() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for (expression, expected) in [
+        ("'é😀x'.length()", 4),
+        ("'é😀x'.indexOf('x')", 3),
+        ("'é😀xé'.lastIndexOf('é')", 4),
+        ("'é😀x'.lastIndexOf('')", 4),
+        ("'é😀x'.indexOf('missing')", -1),
+    ] {
+        assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
+    }
+}
+
+#[test]
+fn substring_normalizes_bounds_without_panicking() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for (expression, expected) in [
+        ("'é😀x'.substring()", "é😀x"),
+        ("'é😀x'.substring(3, 1)", "😀"),
+        ("'é😀x'.substring(1, 100)", "😀x"),
+        ("'é😀x'.substring(-1, 1)", "é"),
+        ("'é😀x'.substring(100)", ""),
+        ("'é😀x'.substring(2, 2)", ""),
+    ] {
+        assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
+    }
+    assert!(evaluator.evaluate("'😀'.substring(0, 1)").is_err());
 }

@@ -63,9 +63,9 @@ impl StringMethod {
             bail!("indexOf method requires 1 argument");
         }
         let substring = self.get_string_argument(0)?;
-        Ok(Value::Number(
-            s.find(substring).map_or(-1, |index| index as i32).into(),
-        ))
+        Ok(s.find(substring).map_or(Value::from(-1), |index| {
+            Value::from(s[..index].encode_utf16().count())
+        }))
     }
 
     pub fn last_index_of(&self, s: &str) -> Result<Value> {
@@ -73,9 +73,9 @@ impl StringMethod {
             bail!("lastIndexOf method requires 1 argument");
         }
         let substring = self.get_string_argument(0)?;
-        Ok(Value::Number(
-            s.rfind(substring).map_or(-1, |index| index as i32).into(),
-        ))
+        Ok(s.rfind(substring).map_or(Value::from(-1), |index| {
+            Value::from(s[..index].encode_utf16().count())
+        }))
     }
 
     pub fn to_upper_case(&self, s: &str) -> Result<Value> {
@@ -93,13 +93,27 @@ impl StringMethod {
     }
 
     pub fn substring(&self, s: &str) -> Result<Value> {
-        let start = self.get_number_argument(0)?;
-        let end = if self.args.len() == 2 {
-            self.get_number_argument(1)?
+        if self.args.len() > 2 {
+            bail!("substring method accepts at most 2 arguments");
+        }
+        let len = s.encode_utf16().count();
+        let mut start = if self.args.is_empty() {
+            0
         } else {
-            s.len()
+            self.get_number_argument(0)?.min(len)
         };
-        Ok(Value::String(s[start..end].to_string()))
+        let mut end = if self.args.len() == 2 {
+            self.get_number_argument(1)?.min(len)
+        } else {
+            len
+        };
+        if start > end {
+            std::mem::swap(&mut start, &mut end);
+        }
+        let substring = char::decode_utf16(s.encode_utf16().skip(start).take(end - start))
+            .collect::<std::result::Result<String, _>>()
+            .map_err(|_| anyhow!("substring bounds split a UTF-16 surrogate pair"))?;
+        Ok(Value::String(substring))
     }
 
     pub fn starts_with(&self, s: &str) -> Result<Value> {
@@ -132,7 +146,7 @@ impl StringMethod {
         if self.args.len() != 0 {
             bail!("length method requires no arguments");
         }
-        Ok(Value::Number(s.chars().count().into()))
+        Ok(Value::Number(s.encode_utf16().count().into()))
     }
 
     pub fn trim(&self, s: &str) -> Result<Value> {
