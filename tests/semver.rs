@@ -1,3 +1,5 @@
+#![cfg(feature = "semver-support")]
+
 #[cfg(test)]
 #[test]
 fn test_semver() {
@@ -53,4 +55,13 @@ fn test_semver() {
             .unwrap(),
         true
     );
+}
+
+#[test]
+fn semver_greater_equal_includes_equal_versions() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for (version, expected) in [("1.0.0", true), ("1.0.1", true), ("0.9.0", false)] {
+        let expression = format!("semver('{version}') >= semver('1.0.0')");
+        assert_eq!(evaluator.evaluate(&expression).unwrap(), expected);
+    }
 }

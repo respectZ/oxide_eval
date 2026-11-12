@@ -141,7 +141,7 @@ impl Evaluator {
                     BinaryOperator::LessThan => cmp.is_lt(),
                     BinaryOperator::LessEqualThan => cmp.is_le(),
                     BinaryOperator::GreaterThan => cmp.is_gt(),
-                    BinaryOperator::GreaterEqualThan => cmp.is_gt(),
+                    BinaryOperator::GreaterEqualThan => cmp.is_ge(),
                     _ => bail!(
                         "Unsupported binary operator for semver: {:?}",
                         expr.operator
