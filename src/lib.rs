@@ -257,25 +257,31 @@ impl Evaluator {
             Expression::StaticMemberExpression(member) => {
                 let callee = self.evaluate_expr(&member.object)?;
 
-                if let Value::String(callee) = &callee {
+                if let Value::String(_callee) = &callee {
                     #[cfg(feature = "string")]
                     {
                         let callee_name = expr.callee_name().unwrap_or_default();
-                        return Evaluator::evaluate_str_method(callee, callee_name, args);
+                        return Evaluator::evaluate_str_method(_callee, callee_name, args);
                     }
                     #[cfg(not(feature = "string"))]
-                    bail!("'string' feature is not enabled. callee: {:?}", callee)
-                } else if let Value::Array(callee) = &callee {
+                    bail!(
+                        "'string' feature is not enabled for method '{}'",
+                        member.property.name
+                    )
+                } else if let Value::Array(_callee) = &callee {
                     #[cfg(feature = "array")]
                     {
                         let callee_name = expr.callee_name().unwrap_or_default();
-                        return Evaluator::evaluate_array_method(callee, callee_name, args);
+                        return Evaluator::evaluate_array_method(_callee, callee_name, args);
                     }
                     #[cfg(not(feature = "array"))]
-                    bail!("'array' feature is not enabled. callee: {:?}", callee)
+                    bail!(
+                        "'array' feature is not enabled for method '{}'",
+                        member.property.name
+                    )
                 }
 
-                bail!("Unsupported method for {:?}", callee);
+                bail!("Unsupported method: {}", member.property.name);
             }
             _ => bail!("Unsupported callee: {:?}", expr.callee),
         }
@@ -363,7 +369,6 @@ impl Evaluator {
             Ok(Value::Null)
         } else {
             Err(anyhow!(EvaluatorError::PropertyNotFound(
-                obj.to_string(),
                 property.to_owned(),
             )))
         }

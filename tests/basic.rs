@@ -391,3 +391,36 @@ fn standalone_strings_decode_escapes() {
     let evaluator = oxide_eval::Evaluator::new(Default::default());
     assert_eq!(evaluator.evaluate(r#"'a\n\u0062\\c'"#).unwrap(), "a\nb\\c");
 }
+
+#[test]
+fn missing_environment_entries_do_not_leak_context_in_errors() {
+    use oxide_eval::{context::ContextEntry, Evaluator};
+    use serde_json::json;
+    use std::collections::HashMap;
+
+    let evaluator = Evaluator::new(HashMap::from([(
+        "env".into(),
+        ContextEntry::Variable(json!({
+            "PRIVATE_KEY": "fake-secret-token",
+            "LIST": ["fake-array-token"]
+        })),
+    )]));
+    for expression in [
+        "env.MISSING",
+        "env.MISSING()",
+        "env.PRIVATE_KEY.MISSING()",
+        "env.LIST.MISSING()",
+    ] {
+        let error = evaluator.evaluate(expression).unwrap_err();
+        for diagnostic in [error.to_string(), format!("{error:?}")] {
+            assert!(diagnostic.contains("MISSING"), "{expression}: {diagnostic}");
+            for secret in ["PRIVATE_KEY", "fake-secret-token", "fake-array-token"] {
+                assert!(!diagnostic.contains(secret), "{expression}: {diagnostic}");
+            }
+        }
+    }
+    assert_eq!(evaluator.evaluate("env?.MISSING").unwrap(), json!(null));
+    let empty = Evaluator::new(Default::default());
+    assert!(empty.evaluate("env.MISSING").is_err());
+    assert_eq!(empty.evaluate("env?.MISSING").unwrap(), json!(null));
+}
