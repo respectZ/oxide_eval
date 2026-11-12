@@ -63,7 +63,7 @@ impl Evaluator {
             None => {
                 let directive = &program.directives.first();
                 if let Some(directive) = directive {
-                    return Ok(Value::String(directive.directive.into_string()));
+                    return Ok(Value::String(directive.expression.value.into_string()));
                 }
                 bail!("No statements found")
             }

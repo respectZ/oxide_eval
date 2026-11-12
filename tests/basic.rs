@@ -359,3 +359,12 @@ fn zero_dividend_has_zero_remainder() {
     assert_eq!(evaluator.evaluate("5 % 2").unwrap(), 1);
     assert!(evaluator.evaluate("0 % 0").is_err());
 }
+
+#[test]
+fn standalone_strings_decode_escapes() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    assert_eq!(
+        evaluator.evaluate(r#"'a\n\u0062\\c'"#).unwrap(),
+        "a\nb\\c"
+    );
+}
