@@ -322,3 +322,21 @@ fn large_numbers_are_not_clamped_to_i64() {
         assert_eq!(evaluator.evaluate(expression).unwrap(), serde_json::json!(expected), "{expression}");
     }
 }
+
+#[test]
+fn loose_equality_coerces_primitives_but_strict_equality_does_not() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for (expression, expected) in [
+        ("true == 1", true),
+        ("'' == 0", true),
+        ("0 == '  '", true),
+        ("[] == false", true),
+        ("false == [0]", true),
+        ("'garbage' == 0", false),
+        ("null == 0", false),
+        ("true === 1", false),
+        ("[] === false", false),
+    ] {
+        assert_eq!(evaluator.evaluate(expression).unwrap(), expected, "{expression}");
+    }
+}

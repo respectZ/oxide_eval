@@ -152,10 +152,10 @@ impl Evaluator {
         }
 
         match expr.operator {
-            BinaryOperator::Equality => Ok(Value::Bool(equality(&left, &right, false))),
-            BinaryOperator::Inequality => Ok(Value::Bool(!equality(&left, &right, false))),
-            BinaryOperator::StrictEquality => Ok(Value::Bool(equality(&left, &right, true))),
-            BinaryOperator::StrictInequality => Ok(Value::Bool(!equality(&left, &right, true))),
+            BinaryOperator::Equality => Ok(Value::Bool(equality(left, right, false)?)),
+            BinaryOperator::Inequality => Ok(Value::Bool(!equality(left, right, false)?)),
+            BinaryOperator::StrictEquality => Ok(Value::Bool(equality(left, right, true)?)),
+            BinaryOperator::StrictInequality => Ok(Value::Bool(!equality(left, right, true)?)),
             BinaryOperator::LessThan => Ok(Value::Bool(compare(left, right, |cmp| cmp.is_lt())?)),
             BinaryOperator::LessEqualThan => Ok(Value::Bool(compare(left, right, |cmp| cmp.is_le())?)),
             BinaryOperator::GreaterThan => Ok(Value::Bool(compare(left, right, |cmp| cmp.is_gt())?)),

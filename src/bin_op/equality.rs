@@ -1,20 +1,32 @@
+use anyhow::Result;
 use serde_json::Value;
 
-pub fn equality(left: &Value, right: &Value, strict: bool) -> bool {
-    match (left, right) {
+use crate::util::{string_to_number, value_to_primitive};
+
+pub fn equality(left: Value, right: Value, strict: bool) -> Result<bool> {
+    let equal = match (&left, &right) {
         (Value::Null, Value::Null) => true,
-        (Value::Number(l), Value::Number(r)) => l.as_f64() == r.as_f64(),
-        (Value::String(l), Value::String(r)) => l == r,
-        (Value::Bool(l), Value::Bool(r)) => l == r,
-        (Value::Number(l), Value::String(r)) | (Value::String(r), Value::Number(l)) => {
-            if strict {
-                return false;
-            }
-            match (l.as_f64(), r.parse::<f64>()) {
-                (Some(l), Ok(r)) => l == r,
-                _ => false,
-            }
+        (Value::Number(left), Value::Number(right)) => left.as_f64() == right.as_f64(),
+        (Value::String(left), Value::String(right)) => left == right,
+        (Value::Bool(left), Value::Bool(right)) => left == right,
+        _ if strict => false,
+        (Value::Number(number), Value::String(string))
+        | (Value::String(string), Value::Number(number)) => {
+            number.as_f64().is_some_and(|number| number == string_to_number(string))
+        }
+        (Value::Bool(value), _) => {
+            return equality(Value::from(i32::from(*value)), right, false);
+        }
+        (_, Value::Bool(value)) => {
+            return equality(left, Value::from(i32::from(*value)), false);
+        }
+        (Value::Array(_) | Value::Object(_), Value::Number(_) | Value::String(_)) => {
+            return equality(value_to_primitive(left)?, right, false);
+        }
+        (Value::Number(_) | Value::String(_), Value::Array(_) | Value::Object(_)) => {
+            return equality(left, value_to_primitive(right)?, false);
         }
         _ => false,
-    }
+    };
+    Ok(equal)
 }

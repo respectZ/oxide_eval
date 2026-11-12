@@ -22,6 +22,19 @@ pub fn number_to_uint32(value: f64) -> u32 {
     value.trunc().rem_euclid(4294967296.0) as u32
 }
 
+pub fn string_to_number(value: &str) -> f64 {
+    let value = value.trim_matches(|c: char| c.is_whitespace() || c == '\u{feff}');
+    match value {
+        "" => 0.0,
+        "Infinity" | "+Infinity" => f64::INFINITY,
+        "-Infinity" => f64::NEG_INFINITY,
+        _ if value.bytes().any(|c| c.is_ascii_alphabetic() && c != b'e' && c != b'E') => {
+            f64::NAN
+        }
+        _ => value.parse().unwrap_or(f64::NAN),
+    }
+}
+
 pub fn vec_to_js_string(vec: &[Value]) -> String {
     vec.iter()
         .map(|v| match v {
