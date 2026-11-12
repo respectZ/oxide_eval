@@ -289,3 +289,23 @@ fn relational_operators_compare_numbers_numerically() {
     }
     assert_eq!(evaluator.evaluate("2 > 10").unwrap(), false);
 }
+
+#[test]
+fn object_keys_are_property_names() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    for expression in ["({foo: 1}).foo", "({'foo': 1}).foo", "({['f' + 'oo']: 1}).foo"] {
+        assert_eq!(evaluator.evaluate(expression).unwrap(), 1, "{expression}");
+    }
+    assert_eq!(evaluator.evaluate("({[1 + 1]: 3})").unwrap(), serde_json::json!({"2": 3}));
+}
+
+#[test]
+fn member_access_reads_properties_instead_of_returning_receivers() {
+    let evaluator = oxide_eval::Evaluator::new(Default::default());
+    assert_eq!(evaluator.evaluate("'é😀'.length").unwrap(), 3);
+    assert_eq!(evaluator.evaluate("[1, 2].length").unwrap(), 2);
+    assert_eq!(evaluator.evaluate("null?.foo").unwrap(), serde_json::Value::Null);
+    for expression in ["(42).foo", "null.foo", "'abc'.unknown"] {
+        assert!(evaluator.evaluate(expression).is_err(), "{expression}");
+    }
+}

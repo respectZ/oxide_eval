@@ -21,13 +21,13 @@ use oxc::{
     ast::ast::{
         ArrayExpression, BinaryExpression, BinaryOperator, CallExpression, ChainElement,
         ChainExpression, ConditionalExpression, Expression, LogicalExpression, LogicalOperator,
-        ObjectExpression, ObjectPropertyKind, Statement, StaticMemberExpression, UnaryExpression,
-        UnaryOperator,
+        ObjectExpression, ObjectPropertyKind, PropertyKey, Statement, StaticMemberExpression,
+        UnaryExpression, UnaryOperator,
     },
     parser::Parser,
     span::SourceType,
 };
-use serde_json::{to_string, Map, Value};
+use serde_json::{Map, Value};
 use std::collections::HashMap;
 use unary::{unary_bitwise_not, unary_negation, unary_plus};
 use util::number_from_f64;
@@ -250,8 +250,8 @@ impl Evaluator {
                     }
                 }
             }
-            _ => {
-                let callee = self.evaluate_expr(&expr.callee)?;
+            Expression::StaticMemberExpression(member) => {
+                let callee = self.evaluate_expr(&member.object)?;
 
                 if let Value::String(callee) = &callee {
                     #[cfg(feature = "string")]
@@ -273,6 +273,7 @@ impl Evaluator {
 
                 bail!("Unsupported method for {:?}", callee);
             }
+            _ => bail!("Unsupported callee: {:?}", expr.callee),
         }
     }
     fn evaluate_chain(&self, expr: &ChainExpression) -> Result<Value> {
@@ -310,12 +311,15 @@ impl Evaluator {
         for property in properties {
             match property {
                 ObjectPropertyKind::ObjectProperty(object_property) => {
-                    let key = match object_property.key.as_expression() {
-                        Some(v) => v,
-                        _ => bail!("Object key is not an expression"),
+                    let key = match &object_property.key {
+                        PropertyKey::StaticIdentifier(key) => key.name.to_string(),
+                        key => {
+                            let expression = key
+                                .as_expression()
+                                .ok_or_else(|| anyhow!("Unsupported object key"))?;
+                            util::value_to_string(self.evaluate_expr(expression)?)
+                        }
                     };
-                    let key = self.evaluate_expr(key)?;
-                    let key = to_string(&key)?;
                     let value = self.evaluate_expr(&object_property.value)?;
                     map.insert(key, value);
                 }
@@ -340,22 +344,24 @@ impl Evaluator {
         } else {
             self.evaluate_expr(&expr.object)?
         };
-        let property = expr.property.name.to_string();
-        match &obj {
-            Value::Object(map) => {
-                let value = map.get(&property);
-                if let Some(value) = value {
-                    return Ok(value.clone());
-                }
-                if expr.optional {
-                    return Ok(Value::Null);
-                }
-                Err(anyhow!(EvaluatorError::PropertyNotFound(
-                    obj.to_string(),
-                    property.clone(),
-                )))
+        let property = expr.property.name.as_str();
+        let value = match &obj {
+            Value::Object(map) => map.get(property).cloned(),
+            Value::String(value) if property == "length" => {
+                Some(Value::from(value.encode_utf16().count()))
             }
-            _ => Ok(obj),
+            Value::Array(value) if property == "length" => Some(Value::from(value.len())),
+            _ => None,
+        };
+        if let Some(value) = value {
+            Ok(value)
+        } else if expr.optional {
+            Ok(Value::Null)
+        } else {
+            Err(anyhow!(EvaluatorError::PropertyNotFound(
+                obj.to_string(),
+                property.to_owned(),
+            )))
         }
     }
     fn evaluate_unary(&self, expr: &UnaryExpression) -> Result<Value> {
